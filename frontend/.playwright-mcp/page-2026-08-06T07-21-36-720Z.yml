@@ -1,0 +1,43 @@
+- generic [ref=f1e4]:
+  - complementary [ref=f1e5]:
+    - generic [ref=f1e6]:
+      - generic [ref=f1e7]:
+        - img "cloud" [ref=f1e9]
+        - generic [ref=f1e12]: 多云管理平台
+      - menu [ref=f1e13]:
+        - menuitem "dashboard 仪表盘" [ref=f1e14] [cursor=pointer]:
+          - img "dashboard" [ref=f1e15]
+          - generic [ref=f1e18]: 仪表盘
+        - menuitem "cloud-server 云服务器" [ref=f1e19] [cursor=pointer]:
+          - img "cloud-server" [ref=f1e20]
+          - generic [ref=f1e25]: 云服务器
+        - menuitem "global 域名管理" [ref=f1e26] [cursor=pointer]:
+          - img "global" [ref=f1e27]
+          - generic [ref=f1e30]: 域名管理
+        - menuitem "api 域名解析" [ref=f1e31] [cursor=pointer]:
+          - img "api" [ref=f1e32]
+          - generic [ref=f1e35]: 域名解析
+        - menuitem "cluster 云账号" [ref=f1e36] [cursor=pointer]:
+          - img "cluster" [ref=f1e37]
+          - generic [ref=f1e40]: 云账号
+        - menuitem "history 操作日志" [ref=f1e41] [cursor=pointer]:
+          - img "history" [ref=f1e42]
+          - generic [ref=f1e45]: 操作日志
+        - menuitem "setting 系统设置" [ref=f1e46] [cursor=pointer]:
+          - img "setting" [ref=f1e47]
+          - generic [ref=f1e50]: 系统设置
+    - img "left" [ref=f1e52] [cursor=pointer]
+  - generic [ref=f1e55]:
+    - banner [ref=f1e56]:
+      - generic [ref=f1e57]:
+        - img "dashboard" [ref=f1e60]
+        - generic [ref=f1e63]: 仪表盘
+      - generic [ref=f1e64]:
+        - generic [ref=f1e66]:
+          - img "cloud" [ref=f1e67]
+          - text: Mock 数据模式
+        - generic [ref=f1e71] [cursor=pointer]:
+          - img "user" [ref=f1e74]
+          - generic [ref=f1e77]: 管理员
+          - img "down" [ref=f1e79]
+    - main [ref=f1e82]

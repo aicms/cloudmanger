@@ -1,0 +1,141 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ===== 滚动条：更细腻的视觉 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== 统一焦点态 ===== */
+:focus-visible {
+  outline: 2px solid rgba(22, 119, 255, 0.35);
+  outline-offset: 1px;
+}
+
+/* ===== 页面进出场淡入动画 ===== */
+@keyframes cm-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cm-page {
+  animation: cm-fade-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== 表格表头字重与数值列等宽数字 ===== */
+.ant-table-thead > tr > th {
+  font-weight: 600 !important;
+}
+
+.ant-table-tbody > tr {
+  transition: background-color 0.2s;
+}
+
+.mono-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ===== 用户触发器 ===== */
+.user-trigger {
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.user-trigger:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ===== 侧边栏：选中项高亮 glow + 左侧强调条 ===== */
+.cm-sider .ant-menu-dark {
+  background: transparent;
+}
+
+.cm-sider .ant-menu-dark .ant-menu-item-selected {
+  background: linear-gradient(90deg, rgba(22, 119, 255, 0.28), rgba(22, 119, 255, 0.06)) !important;
+  box-shadow: inset 3px 0 0 0 #4096ff;
+}
+
+.cm-sider .ant-menu-dark .ant-menu-item-selected .anticon {
+  color: #ffffff !important;
+}
+
+.cm-sider .ant-menu-dark .ant-menu-item {
+  transition: background 0.2s, color 0.2s;
+}
+
+.cm-sider .ant-menu-dark .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ===== 卡片悬浮微交互 ===== */
+.cm-card-hover {
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+.cm-card-hover:hover {
+  box-shadow: 0 6px 22px rgba(20, 40, 80, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ===== 可点击卡片光标 ===== */
+.cm-clickable {
+  cursor: pointer;
+}
+
+/* ===== 统计卡片图标圆形块呼吸感 ===== */
+.cm-stat-icon {
+  transition: transform 0.25s ease;
+}
+
+.cm-clickable:hover .cm-stat-icon {
+  transform: scale(1.08);
+}
+
+/* ===== 业务链路徽标（如「30 天内到期」提示条） ===== */
+.cm-warn-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  color: #ad6800;
+  font-size: 13px;
+}

@@ -1,0 +1,33 @@
+# ===== Go =====
+backend/bin/
+backend/data/
+backend/logs/
+backend/server.log
+*.exe
+*.exe~
+
+# 内嵌前端构建产物：打包单文件发布前需将 frontend/dist 拷贝到此处，产物本身不入库
+backend/internal/webui/dist/*
+!backend/internal/webui/dist/index.html
+
+# 打包发布产物（release.ps1 生成）
+release/
+
+# 本地打包工具（release.ps1 按需下载，如 upx）
+.tools/
+
+# ===== Node / Frontend =====
+frontend/node_modules/
+frontend/dist/
+frontend/pnpm-debug.log*
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# ===== IDE / OS =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+vite.log
