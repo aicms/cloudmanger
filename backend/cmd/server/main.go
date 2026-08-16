@@ -35,7 +35,7 @@ func main() {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}
 
-	// 种子数据（默认管理员 + 示例云账号 + 首次同步）
+	// 种子数据（默认管理员 + 启动时异步同步已录入云账号）
 	if err := migrations.Seed(repository.DB, cfg); err != nil {
 		log.Printf("种子数据警告: %v", err)
 	}

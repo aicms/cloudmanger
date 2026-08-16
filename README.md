@@ -2,7 +2,7 @@
 
 > 中小企业集中管理阿里云 / 腾讯云服务器、域名与 DNS 解析的统一 Web 平台。
 > 技术栈：Go (Gin) + SQLite + React + Ant Design 5，全栈。
-> 支持双数据模式：**模拟数据**(开箱即用演示)与**真实云 API**(填入 AccessKey 拉取真实资源)。
+> 通过录入云厂商 AccessKey，调用**真实云 API** 拉取并集中管理阿里云 / 腾讯云资源（无内置模拟数据模式）。
 
 ## 功能模块
 
@@ -22,15 +22,14 @@
 浏览器 (React + AntD SPA)
    │ REST / JSON (JWT)
 Go Gin API Server ── CloudProvider 接口层
-   │                     ├─ MockProvider ✅ (mode=mock)
-   │                     ├─ AliyunProvider ✅ (mode=sdk, ECS/Domain/Alidns)
-   │                     └─ TencentProvider ✅ (mode=sdk, CVM/Domain/DNSPod)
+   │                     ├─ AliyunProvider ✅ (ECS / Domain / Alidns)
+   │                     └─ TencentProvider ✅ (CVM / Domain / DNSPod)
    └── GORM → SQLite
 ```
 
-**核心设计**：业务层只面向 `CloudProvider` 接口编程。Mock 与真实云厂商均实现该接口，
-由云账号的 `mode` 字段决定路由：`mode=mock` 使用内置 MockProvider（示例数据），`mode=sdk`
-使用对应云厂商真实适配器（调用云 SDK）。两种模式可在同一平台并存，业务代码无差异。
+**核心设计**：业务层只面向 `CloudProvider` 接口编程。阿里云 / 腾讯云均实现该接口，
+由云账号的 `Provider` 字段（`aliyun` / `tencent`）决定路由，调用对应云厂商真实 SDK。
+云资源以「同步快照」存入本地库，业务代码对两种云厂商无差异。
 
 ## 目录结构
 
@@ -44,7 +43,7 @@ CloudManger/
 │   │   ├── repository/      # 数据访问层
 │   │   ├── service/         # 业务逻辑层
 │   │   ├── api/             # 路由 + handler
-│   │   ├── cloud/           # 云厂商适配（接口 + mock + aliyun + tencent）
+│   │   ├── cloud/           # 云厂商适配（接口 + aliyun + tencent，各自 init() 自注册）
 │   │   ├── middleware/       # JWT / CORS / 日志
 │   │   └── auth/            # JWT + AES 加密
 │   ├── migrations/seed.go   # 种子数据
@@ -89,8 +88,9 @@ GIN_MODE=debug go run ./cmd/server
 
 后端启动时会自动建表并写入种子数据：
 - 默认管理员：`admin` / `admin123`
-- 2 个示例云账号（阿里云 + 腾讯云，均为**模拟数据**模式）
-- 12 台云服务器、6 个域名、~36 条解析记录
+
+云账号（及其服务器 / 域名 / 解析资源）**不会**被种子预置，需登录后在「云账号管理」中录入
+真实 AccessKey 并点击「同步」后才会拉取。未录入账号时，服务器 / 域名 / 解析页面为空。
 
 ### 2. 启动前端（端口 5173）
 
@@ -119,22 +119,44 @@ cd frontend && pnpm build   # 产物在 frontend/dist
 ```
 构建后将 `dist` 部署到 Nginx，反向代理 `/api` 到后端即可。
 
-## 真实云 API 接入（已实现）
+## 桌面客户端（Tauri，Windows）
 
-阿里云、腾讯云真实适配器已实现并默认注册（`router.go` blank import）：
+源码在 `tauri/`。它把编译好的 Go 后端作为 **sidecar** 打包进一个原生窗口应用：
+启动客户端即自动拉起后端并打开 WebView 加载 `http://localhost:8002`，无需单独跑服务；
+NSIS 安装包默认在**桌面**和开始菜单创建快捷方式。
+
+```bash
+cd tauri
+pnpm install                 # 安装 @tauri-apps/cli
+pnpm build                   # = build:sidecar (编译 Go 后端) + tauri build
+```
+
+产物：`tauri/src-tauri/target/release/bundle/nsis/Cloud Manager_0.1.0_x64-setup.exe`。
+运行 `tauri/dev` 可调试（需先 `pnpm build:sidecar`）。
+
+注意：
+- Go 后端 sidecar 由 `tauri/build-sidecar.ps1` 生成到 `tauri/src-tauri/binaries/`，文件名带
+  当前目标三元组（如 `cloud-manager-x86_64-pc-windows-msvc.exe`），该目录已被 `.gitignore` 忽略。
+- 图标由 `tauri/gen-icon.js`（纯 Node，无外部依赖）生成，重新生成可执行 `pnpm icon`。
+- 仅依赖 `tauri-build` 已支持的 NSIS 字段；若升级 Tauri 大版本，注意 `bundle.windows.nsis`
+  配置项可能变化（如 `createDesktopShortcut` 在旧版本不存在，当前靠 NSIS 模板默认创建桌面快捷方式）。
+
+## 接入云厂商（阿里云 / 腾讯云）
+
+阿里云、腾讯云适配器已实现并默认注册（`router.go` blank import）；路由按云账号的 `Provider`
+字段（`aliyun` / `tencent`）进行：
 
 | 云厂商 | 服务器 | 域名 | DNS 解析 |
 |---|---|---|---|
 | 阿里云 | ECS `DescribeInstances` / Start / Stop / Reboot | Domain `QueryDomainList` | Alidns `Describe/Add/Update/DeleteDomainRecords` |
 | 腾讯云 | CVM `DescribeInstances` / Start / Stop / Reboot | Domain `DescribeDomainNameList` | DNSPod `Describe/Create/Modify/DeleteRecord` |
 
-### 使用真实云资源
+### 使用云资源
 
 1. 登录平台 -> **云账号管理** -> 添加云账号
-2. 选择云厂商，**数据模式选「真实云 API」**
-3. 填入该云厂商的 `AccessKey ID` / `AccessKey Secret`、默认地域
-4. 保存后点击「同步」按钮，平台即通过 SDK 拉取真实服务器/域名/解析并存入本地缓存
-5. 之后在服务器/域名/解析页面查看与操作真实资源
+2. 选择云厂商（阿里云 / 腾讯云），填入该云厂商的 `AccessKey ID` / `AccessKey Secret`、默认地域
+3. 保存后点击「同步」按钮，平台即通过 SDK 拉取真实服务器/域名/解析并存入本地缓存
+4. 之后在服务器/域名/解析页面查看与操作真实资源
 
 ### AccessKey 获取
 
@@ -149,4 +171,3 @@ cd frontend && pnpm build   # 产物在 frontend/dist
 
 - **密钥安全**：云账号 `AccessKeySecret` 以 AES-GCM 加密存入 SQLite，接口返回脱敏。
 - **缓存同步**：云资源以「同步快照」存入本地库，`synced_at` 记录同步时间，避免频繁调用云 API。
-- **Mock 闭环**：Mock 实现支持服务器开关机、解析增删改，状态持久，保证前端交互完整。

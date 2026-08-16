@@ -1,0 +1,16 @@
+{
+  "name": "cloud-manager-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "多云管理平台桌面客户端 (Tauri 包装 Go 后端 sidecar)",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build:sidecar": "powershell -ExecutionPolicy Bypass -File ./build-sidecar.ps1",
+    "build": "pnpm build:sidecar && tauri build",
+    "icon": "tauri icon src-tauri/icons/source.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

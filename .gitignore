@@ -24,6 +24,13 @@ frontend/pnpm-debug.log*
 # TypeScript incremental build info
 *.tsbuildinfo
 
+# ===== Tauri 桌面客户端 =====
+tauri/node_modules/
+tauri/src-tauri/target/
+# Go 后端 sidecar 由 build-sidecar.ps1 生成，不入库
+tauri/src-tauri/binaries/
+tauri/gen-icon.js
+
 # ===== IDE / OS =====
 .vscode/
 .idea/
