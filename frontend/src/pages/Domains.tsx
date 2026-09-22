@@ -98,7 +98,7 @@ export default function Domains() {
 
   return (
     <div>
-      <PageHeader title="域名管理" description="跨云域名统一视图，到期自动提醒" />
+      <PageHeader title="域名管理" />
 
       <Card styles={{ body: { padding: 20 } }}>
         <Toolbar

@@ -3,12 +3,13 @@
 use std::sync::Mutex;
 use std::time::Duration;
 
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
 /// Holds the spawned sidecar child process for the whole app lifetime.
-/// Dropping `CommandChild` kills the process, so we keep it in managed state.
+/// `CommandChild` has no Drop impl (killing is an explicit `kill(self)` call),
+/// so we keep it here and kill it ourselves on `RunEvent::Exit`.
 struct Sidecar(Mutex<Option<CommandChild>>);
 
 /// Poll the backend TCP port until it accepts connections (or we give up).
@@ -29,28 +30,35 @@ fn main() {
         .setup(|app| {
             let handle = app.handle().clone();
 
-            // Spawn the bundled Go backend as a sidecar.
-            let sidecar = handle
-                .shell()
-                .sidecar("cloud-manager")
-                .map_err(|e| e.to_string())?;
-            let (mut rx, child) = sidecar.spawn().map_err(|e| e.to_string())?;
-            app.state::<Sidecar>().0.lock().unwrap().replace(child);
+            // Spawn the bundled Go backend as a sidecar — unless something is
+            // already serving :8002 (e.g. `beforeDevCommand` started it for
+            // `tauri dev`, or a standalone backend is running). In that case we
+            // reuse the existing backend instead of launching a second one.
+            if wait_for_server("127.0.0.1", 8002, 1) {
+                eprintln!("[cloud-manager] backend already listening on :8002, skipping sidecar spawn");
+            } else {
+                let sidecar = handle
+                    .shell()
+                    .sidecar("cloud-manager")
+                    .map_err(|e| e.to_string())?;
+                let (mut rx, child) = sidecar.spawn().map_err(|e| e.to_string())?;
+                app.state::<Sidecar>().0.lock().unwrap().replace(child);
 
-            // Forward sidecar stdout/stderr to the host process log.
-            tauri::async_runtime::spawn(async move {
-                while let Some(event) = rx.recv().await {
-                    match event {
-                        CommandEvent::Stdout(bytes) => {
-                            print!("[cloud-manager] {}", String::from_utf8_lossy(&bytes));
+                // Forward sidecar stdout/stderr to the host process log.
+                tauri::async_runtime::spawn(async move {
+                    while let Some(event) = rx.recv().await {
+                        match event {
+                            CommandEvent::Stdout(bytes) => {
+                                print!("[cloud-manager] {}", String::from_utf8_lossy(&bytes));
+                            }
+                            CommandEvent::Stderr(bytes) => {
+                                eprint!("[cloud-manager] {}", String::from_utf8_lossy(&bytes));
+                            }
+                            _ => {}
                         }
-                        CommandEvent::Stderr(bytes) => {
-                            eprint!("[cloud-manager] {}", String::from_utf8_lossy(&bytes));
-                        }
-                        _ => {}
                     }
-                }
-            });
+                });
+            }
 
             // The window starts hidden; reveal it once the backend is reachable.
             // Navigate explicitly after the port is open: the WebView may have
@@ -73,6 +81,15 @@ fn main() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| {
+            // 应用退出时(含窗口关闭)杀掉本进程拉起的 sidecar 后端,避免孤儿进程。
+            // 复用的外部后端(如 tauri dev 的 beforeDevCommand 所启)不在状态里,不受影响。
+            if let RunEvent::Exit = event {
+                if let Some(child) = app.state::<Sidecar>().0.lock().unwrap().take() {
+                    let _ = child.kill();
+                }
+            }
+        });
 }

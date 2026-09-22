@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudManager 云管 — 多云管理平台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231677ff'/%3E%3Cpath d='M17 16.5a3.4 3.4 0 1 0 0-6.8h-1.4A5.3 5.3 0 1 0 5.6 13' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M12 12.5V18M9.8 16l2.2 2.2L14.2 16' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="description" content="中小企业多云管理平台:集中管理阿里云 / 腾讯云服务器、域名与 DNS 解析。单二进制部署,开箱即用,免费使用。">
+<style>
+/* ============ 设计令牌 ============ */
+:root {
+  --primary: #1677ff;
+  --primary-hover: #4096ff;
+  --primary-deep: #0a3d91;
+  --navy-1: #001529;
+  --navy-2: #0b1f3a;
+  --aliyun: #ff6a00;
+  --tencent: #006eff;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --purple: #722ed1;
+
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --text: #1f2329;
+  --text-2: #51565d;
+  --text-3: #8a919c;
+  --border: #e6e9ee;
+  --hero-text: #f4f8ff;
+  --hero-text-2: rgba(226, 238, 255, 0.72);
+  --shadow-sm: 0 1px 3px rgba(16, 34, 64, 0.06);
+  --shadow-md: 0 8px 24px rgba(16, 34, 64, 0.08);
+  --shadow-lg: 0 24px 60px rgba(2, 15, 40, 0.28);
+  --radius: 14px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1420;
+    --surface: #141d2c;
+    --surface-2: #18233486;
+    --text: #e8edf4;
+    --text-2: #aab4c2;
+    --text-3: #6f7a89;
+    --border: #243146;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="dark"] {
+    --bg: #0d1420;
+    --surface: #141d2c;
+    --surface-2: #18233486;
+    --text: #e8edf4;
+    --text-2: #aab4c2;
+    --text-3: #6f7a89;
+    --border: #243146;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: rgba(22, 119, 255, 0.25); }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+/* ============ 导航 ============ */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+  border-bottom: 1px solid transparent;
+}
+.nav.scrolled {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nav.scrolled { background: rgba(13, 20, 32, 0.85); }
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="dark"] .nav.scrolled { background: rgba(13, 20, 32, 0.85); }
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #fff; }
+.logo-mark {
+  width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary-deep));
+  box-shadow: 0 4px 14px rgba(22, 119, 255, 0.45);
+  flex: none;
+}
+.logo-mark svg { width: 20px; height: 20px; }
+.logo small { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.55); display: block; line-height: 1.1; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-links a {
+  padding: 8px 14px; border-radius: 8px; font-size: 14.5px; color: rgba(255,255,255,0.82);
+  transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.nav.scrolled .nav-links a { color: var(--text-2); }
+.nav.scrolled .nav-links a:hover { color: var(--primary); background: rgba(22, 119, 255, 0.08); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+  border: none; font-family: inherit; transition: all 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+  color: #fff; padding: 11px 24px;
+  box-shadow: 0 6px 18px rgba(22, 119, 255, 0.35);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(22, 119, 255, 0.45); }
+.btn-ghost {
+  background: rgba(255,255,255,0.1); color: #fff; padding: 10px 20px;
+  border: 1px solid rgba(255,255,255,0.28); backdrop-filter: blur(6px);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.18); }
+.btn-outline {
+  background: var(--surface); color: var(--text); padding: 11px 24px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+.btn-sm { padding: 8px 16px; font-size: 14px; }
+.nav .btn-primary { padding: 8px 18px; font-size: 14px; }
+.nav-toggle { display: none; background: none; border: none; cursor: pointer; color: #fff; padding: 8px; }
+.nav-toggle svg { width: 24px; height: 24px; display: block; }
+
+/* ============ Hero ============ */
+.hero {
+  position: relative;
+  padding: 152px 0 96px;
+  background:
+    radial-gradient(900px 480px at 18% -10%, rgba(64, 150, 255, 0.35) 0%, transparent 55%),
+    radial-gradient(700px 420px at 85% 0%, rgba(114, 46, 209, 0.22) 0%, transparent 55%),
+    linear-gradient(180deg, #0b1f3a 0%, #001529 100%);
+  color: var(--hero-text);
+  overflow: hidden;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(720px 480px at 60% 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(720px 480px at 60% 0%, #000 30%, transparent 75%);
+}
+.hero .container { position: relative; z-index: 1; }
+.hero-grid { display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px; font-size: 13px;
+  background: rgba(64, 150, 255, 0.14); border: 1px solid rgba(64, 150, 255, 0.35);
+  color: #9fd0ff; margin-bottom: 22px;
+}
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
+.hero h1 {
+  font-size: clamp(38px, 5.4vw, 58px); line-height: 1.16; font-weight: 800;
+  letter-spacing: 0.5px; margin-bottom: 20px;
+}
+.hero h1 .grad {
+  background: linear-gradient(100deg, #6cb6ff 0%, #a78bfa 55%, #5eead4 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero p.lead { font-size: 17.5px; color: var(--hero-text-2); max-width: 480px; margin-bottom: 34px; }
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 42px; }
+.hero-stats { display: flex; gap: 40px; flex-wrap: wrap; }
+.hero-stat .num { font-size: 26px; font-weight: 800; color: #fff; }
+.hero-stat .num em { font-style: normal; color: var(--primary-hover); }
+.hero-stat .lbl { font-size: 13px; color: var(--hero-text-2); margin-top: 2px; }
+
+/* —— 仪表盘模拟 —— */
+.mock-wrap { position: relative; }
+.mock {
+  background: #f7f9fc; border-radius: 16px; overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 12px; color: #3d4550;
+}
+.mock-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: #e8edf4; padding: 9px 14px; border-bottom: 1px solid #dde4ec;
+}
+.mock-bar i { width: 11px; height: 11px; border-radius: 50%; }
+.mock-bar i:nth-child(1) { background: #ff5f57; } .mock-bar i:nth-child(2) { background: #febc2e; } .mock-bar i:nth-child(3) { background: #28c840; }
+.mock-url {
+  flex: 1; margin-left: 8px; background: #fff; border-radius: 6px; padding: 3px 12px;
+  font-size: 11px; color: #8a919c; font-family: var(--mono);
+}
+.mock-body { display: grid; grid-template-columns: 118px 1fr; min-height: 330px; }
+.mock-side { background: #0b1f3a; padding: 12px 8px; display: flex; flex-direction: column; gap: 3px; }
+.mock-side span {
+  padding: 7px 11px; border-radius: 7px; color: rgba(255,255,255,0.6);
+  font-size: 11.5px; display: flex; align-items: center; gap: 7px;
+}
+.mock-side span.on { background: rgba(22,119,255,0.9); color: #fff; }
+.mock-side i { width: 11px; height: 11px; border-radius: 3px; background: currentColor; opacity: 0.55; flex: none; }
+.mock-main { padding: 14px; }
+.mock-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 12px; }
+.mock-card { background: #fff; border-radius: 9px; padding: 10px 11px; border: 1px solid #eef1f5; box-shadow: 0 1px 2px rgba(16,34,64,0.04); }
+.mock-card .t { font-size: 10.5px; color: #8a919c; }
+.mock-card .v { font-size: 19px; font-weight: 700; margin-top: 2px; }
+.mock-card .v i { font-style: normal; font-size: 10px; font-weight: 500; margin-left: 5px; }
+.mock-panels { display: grid; grid-template-columns: 1.25fr 1fr; gap: 9px; }
+.mock-panel { background: #fff; border-radius: 9px; padding: 11px; border: 1px solid #eef1f5; }
+.mock-panel .pt { font-size: 11px; font-weight: 600; color: #3d4550; margin-bottom: 9px; }
+.bars { display: flex; align-items: flex-end; gap: 9px; height: 86px; padding: 0 3px; }
+.bars .b { flex: 1; border-radius: 4px 4px 0 0; background: var(--primary); opacity: 0.92; animation: grow 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.bars .b:nth-child(2) { animation-delay: 0.08s; } .bars .b:nth-child(3) { animation-delay: 0.16s; }
+.bars .b:nth-child(4) { animation-delay: 0.24s; } .bars .b:nth-child(5) { animation-delay: 0.32s; }
+.bars .b:nth-child(6) { animation-delay: 0.40s; }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bars { transform-origin: bottom; }
+.mock-row { display: flex; align-items: center; gap: 8px; padding: 6px 2px; border-bottom: 1px dashed #eef1f5; font-size: 11px; }
+.mock-row:last-child { border-bottom: none; }
+.mock-row .nm { font-weight: 600; }
+.mock-row .sub { color: #8a919c; font-size: 10px; }
+.mock-row .st { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; }
+.mock-row .st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+.mock-row .st.off::before { background: var(--danger); }
+.float-card {
+  position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.96); border-radius: 12px; padding: 11px 15px;
+  box-shadow: 0 16px 40px rgba(2, 15, 40, 0.35), 0 0 0 1px rgba(255,255,255,0.5);
+  font-size: 12.5px; color: #3d4550; font-weight: 500; backdrop-filter: blur(8px);
+  animation: floaty 5s ease-in-out infinite;
+}
+.float-card .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+.float-card .ic svg { width: 17px; height: 17px; }
+.float-card small { display: block; font-weight: 400; color: #8a919c; font-size: 11px; margin-top: 1px; }
+.fc-1 { top: -20px; left: -34px; animation-delay: 0.6s; }
+.fc-2 { bottom: -18px; right: -26px; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+/* ============ 厂商兼容条 ============ */
+.vendors { padding: 34px 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+.vendors-inner { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.vendors .vlabel { font-size: 13.5px; color: var(--text-3); margin-right: 8px; }
+.vchip {
+  display: inline-flex; align-items: center; gap: 9px; padding: 9px 18px;
+  border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
+  font-weight: 600; font-size: 14px;
+}
+.vchip i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.vchip small { font-weight: 400; color: var(--text-3); }
+
+/* ============ 区块通用 ============ */
+.section { padding: 88px 0; }
+.section.alt { background: var(--surface); border-block: 1px solid var(--border); }
+.sec-head { text-align: center; max-width: 640px; margin: 0 auto 56px; }
+.sec-kicker {
+  display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  color: var(--primary); margin-bottom: 12px;
+}
+.sec-head h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; line-height: 1.25; margin-bottom: 12px; }
+.sec-head p { color: var(--text-2); font-size: 16px; }
+
+/* ============ 功能特性 ============ */
+.feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.feat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px 26px; box-shadow: var(--shadow-sm);
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  position: relative; overflow: hidden;
+}
+.section.alt .feat { background: var(--surface-2); background-color: var(--bg); }
+.feat:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(22, 119, 255, 0.45); }
+.feat-ic {
+  width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+  margin-bottom: 18px; background: rgba(22, 119, 255, 0.1);
+}
+.feat-ic svg { width: 23px; height: 23px; }
+.feat h3 { font-size: 17.5px; font-weight: 700; margin-bottom: 8px; }
+.feat p { font-size: 14.5px; color: var(--text-2); }
+.feat .tags { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+  font-size: 11.5px; padding: 3px 9px; border-radius: 6px;
+  background: rgba(22, 119, 255, 0.08); color: var(--primary); font-weight: 500;
+}
+.tag.warn { background: rgba(250, 173, 20, 0.12); color: #ad6800; }
+.tag.green { background: rgba(82, 196, 26, 0.12); color: #389e0d; }
+.tag.purple { background: rgba(114, 46, 209, 0.1); color: #722ed1; }
+
+/* ============ 亮点(左文右图) ============ */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.hl-item { display: flex; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--border); }
+.hl-item:last-child { border-bottom: none; }
+.hl-ic { width: 40px; height: 40px; border-radius: 11px; flex: none; display: grid; place-items: center; }
+.hl-ic svg { width: 20px; height: 20px; }
+.hl-item h4 { font-size: 16.5px; font-weight: 700; margin-bottom: 4px; }
+.hl-item p { font-size: 14px; color: var(--text-2); }
+
+/* 终端模拟 */
+.term {
+  background: #0d1526; border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid #22304a;
+  font-family: var(--mono); font-size: 13.5px; color: #c9d6ea;
+}
+.term-bar { display: flex; align-items: center; gap: 7px; background: #101a2e; padding: 10px 14px; border-bottom: 1px solid #1c2942; }
+.term-bar i { width: 11px; height: 11px; border-radius: 50%; }
+.term-bar i:nth-child(1) { background: #ff5f57; } .term-bar i:nth-child(2) { background: #febc2e; } .term-bar i:nth-child(3) { background: #28c840; }
+.term-bar span { margin-left: 8px; font-size: 11px; color: #5c6c8c; font-family: var(--font); }
+.term-body { padding: 20px 22px 24px; line-height: 2; }
+.term-body .cm { color: #56698c; }
+.term-body .pr { color: #6cb6ff; }
+.term-body .ok { color: #4ade80; }
+.term-body .cur { display: inline-block; width: 8px; height: 16px; background: #6cb6ff; vertical-align: -3px; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ============ 快速开始 ============ */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: step; }
+.step {
+  position: relative; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 30px 26px 26px; box-shadow: var(--shadow-sm);
+}
+.section.alt .step { background: var(--bg); }
+.step::before {
+  counter-increment: step; content: "0" counter(step);
+  position: absolute; top: -16px; left: 24px;
+  font-size: 40px; font-weight: 800; font-family: var(--mono);
+  background: linear-gradient(160deg, var(--primary-hover), var(--primary-deep));
+  color: #fff; width: 52px; height: 52px; border-radius: 13px;
+  display: grid; place-items: center; font-size: 19px;
+  box-shadow: 0 8px 20px rgba(22, 119, 255, 0.35);
+}
+.step h4 { font-size: 17px; font-weight: 700; margin: 10px 0 8px; }
+.step p { font-size: 14px; color: var(--text-2); }
+.step code {
+  display: inline-block; margin-top: 12px; padding: 7px 13px; border-radius: 8px;
+  background: var(--navy-2); color: #9fd0ff; font-family: var(--mono); font-size: 12.5px;
+}
+
+/* ============ 桌面客户端 ============ */
+.desktop-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.desk-visual { position: relative; }
+.desk-window {
+  border-radius: 18px; background: linear-gradient(165deg, #10233f, #001224);
+  border: 1px solid rgba(120, 170, 255, 0.2); box-shadow: var(--shadow-lg);
+  padding: 26px 24px 22px; color: #dfe9f7;
+}
+.desk-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.desk-head .dm { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--primary-hover), var(--primary-deep)); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(22,119,255,0.45); }
+.desk-head .dm svg { width: 21px; height: 21px; }
+.desk-head b { font-size: 15px; display: block; }
+.desk-head small { color: #7f92b3; font-size: 11.5px; }
+.desk-badge { margin-left: auto; font-size: 11px; padding: 4px 10px; border-radius: 999px; background: rgba(82,196,26,0.15); color: #7ee08a; border: 1px solid rgba(82,196,26,0.35); }
+.desk-rows { display: flex; flex-direction: column; gap: 8px; }
+.desk-row { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 10px 13px; font-size: 12.5px; }
+.desk-row i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.desk-row .r-sub { color: #7f92b3; font-size: 11px; }
+.desk-row .r-tag { margin-left: auto; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; }
+.desk-dl { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.desk-dl .btn { font-size: 13px; padding: 9px 16px; }
+.btn-soft { background: rgba(108, 182, 255, 0.14); color: #9fd0ff; border: 1px solid rgba(108, 182, 255, 0.35); }
+.btn-soft:hover { background: rgba(108, 182, 255, 0.24); }
+
+/* ============ CTA ============ */
+.cta-band {
+  position: relative; padding: 84px 0; text-align: center; color: #fff; overflow: hidden;
+  background:
+    radial-gradient(640px 300px at 30% 20%, rgba(64, 150, 255, 0.4) 0%, transparent 60%),
+    linear-gradient(135deg, #0b1f3a 0%, #001529 60%, #071a33 100%);
+}
+.cta-band h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 14px; }
+.cta-band p { color: var(--hero-text-2); font-size: 16.5px; margin-bottom: 34px; }
+.cta-band .hero-actions { justify-content: center; margin-bottom: 0; }
+
+/* ============ 页脚 ============ */
+footer { background: #04101f; color: #93a3ba; padding: 52px 0 34px; font-size: 13.5px; }
+.foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.foot-brand .logo { margin-bottom: 14px; }
+.foot-brand p { max-width: 300px; font-size: 13px; color: #6b7d97; }
+.foot-col b { display: block; color: #d7e1f0; font-size: 14px; margin-bottom: 14px; }
+.foot-col a { display: block; padding: 4px 0; color: #7d8fa9; transition: color 0.2s; }
+.foot-col a:hover { color: #9fd0ff; }
+.foot-bottom {
+  border-top: 1px solid #12233c; padding-top: 22px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  color: #55698a; font-size: 12.5px;
+}
+
+/* ============ 进场动画(含回退) ============ */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.reveal:nth-child(2) { transition-delay: 0.08s; } .reveal:nth-child(3) { transition-delay: 0.16s; }
+.reveal:nth-child(4) { transition-delay: 0.24s; } .reveal:nth-child(5) { transition-delay: 0.32s; } .reveal:nth-child(6) { transition-delay: 0.40s; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .bars .b, .float-card { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 980px) {
+  .hero { padding: 128px 0 72px; }
+  .hero-grid, .split, .desktop-wrap { grid-template-columns: 1fr; gap: 52px; }
+  .feat-grid, .steps { grid-template-columns: 1fr 1fr; }
+  .mock-wrap { max-width: 620px; margin: 0 auto; }
+  .fc-1 { left: -6px; } .fc-2 { right: -4px; }
+  .foot-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .feat-grid, .steps { grid-template-columns: 1fr; }
+  .mock-body { grid-template-columns: 92px 1fr; min-height: 300px; }
+  .mock-cards { grid-template-columns: 1fr 1fr; }
+  .mock-panels { grid-template-columns: 1fr; }
+  .hero-actions .btn { flex: 1; }
+  .hero-stats { gap: 24px; }
+  .nav-links {
+    display: none; position: absolute; top: 64px; left: 0; right: 0;
+    background: rgba(4, 16, 31, 0.97); backdrop-filter: blur(14px);
+    flex-direction: column; align-items: stretch; padding: 12px 20px 18px; gap: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { color: #fff !important; padding: 12px 14px; }
+  .nav-toggle { display: block; }
+  .nav .btn-primary { display: none; }
+  .foot-grid { grid-template-columns: 1fr; gap: 26px; }
+  .float-card { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 导航 ================= -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="#top">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.8A7 7 0 1 0 4 14.9"/><path d="M12 12v7"/><path d="m9 16 3 3 3-3"/></svg>
+      </span>
+      <span>CloudManager<small>多云管理平台</small></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#features">功能特性</a>
+      <a href="#highlights">核心优势</a>
+      <a href="#desktop">桌面客户端</a>
+      <a href="#start">快速开始</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary" href="#start">免费开始</a>
+      <button class="nav-toggle" id="navToggle" aria-label="菜单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= Hero ================= -->
+<section class="hero" id="top">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="hero-badge"><span class="dot"></span>开源自部署 · 数据完全本地化</span>
+        <h1>一个平台<br>管好<span class="grad">所有云</span></h1>
+        <p class="lead">中小企业多云管理平台 —— 集中管理阿里云 / 腾讯云的服务器、域名与 DNS 解析,轻量、安全、开箱即用。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#start">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            免费下载使用
+          </a>
+          <a class="btn btn-ghost" href="#features">了解功能</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="num"><em>2</em> 大云厂商</div><div class="lbl">阿里云 · 腾讯云官方 API 直连</div></div>
+          <div class="hero-stat"><div class="num"><em>8</em> 大功能模块</div><div class="lbl">服务器 / 域名 / DNS / 审计</div></div>
+          <div class="hero-stat"><div class="num"><em>1</em> 个可执行文件</div><div class="lbl">单二进制部署,零依赖</div></div>
+        </div>
+      </div>
+
+      <!-- 仪表盘模拟 -->
+      <div class="mock-wrap">
+        <div class="float-card fc-1">
+          <span class="ic" style="background:rgba(250,173,20,.14)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#faad14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </span>
+          <span>域名到期提醒<small>example.com · 剩余 12 天</small></span>
+        </div>
+        <div class="float-card fc-2">
+          <span class="ic" style="background:rgba(82,196,26,.14)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#52c41a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          <span>资源同步完成<small>2 个云账号 · 全地域</small></span>
+        </div>
+        <div class="mock" aria-hidden="true">
+          <div class="mock-bar"><i></i><i></i><i></i><span class="mock-url">http://localhost:8002/#/dashboard</span></div>
+          <div class="mock-body">
+            <div class="mock-side">
+              <span class="on"><i></i>仪表盘</span>
+              <span><i></i>云服务器</span>
+              <span><i></i>域名管理</span>
+              <span><i></i>域名解析</span>
+              <span><i></i>云账号</span>
+              <span><i></i>操作日志</span>
+            </div>
+            <div class="mock-main">
+              <div class="mock-cards">
+                <div class="mock-card"><div class="t">云服务器总数</div><div class="v" style="color:#1677ff">42</div></div>
+                <div class="mock-card"><div class="t">运行中</div><div class="v" style="color:#52c41a">35 <i>台</i></div></div>
+                <div class="mock-card"><div class="t">已停止</div><div class="v" style="color:#ff4d4f">7 <i>台</i></div></div>
+                <div class="mock-card"><div class="t">域名总数</div><div class="v" style="color:#722ed1">18</div></div>
+              </div>
+              <div class="mock-panels">
+                <div class="mock-panel">
+                  <div class="pt">跨云资源分布</div>
+                  <div class="bars">
+                    <div class="b" style="height:52%"></div>
+                    <div class="b" style="height:78%;background:#ff6a00"></div>
+                    <div class="b" style="height:44%"></div>
+                    <div class="b" style="height:66%;background:#006eff"></div>
+                    <div class="b" style="height:35%"></div>
+                    <div class="b" style="height:58%;background:#722ed1"></div>
+                  </div>
+                </div>
+                <div class="mock-panel">
+                  <div class="pt">最新服务器</div>
+                  <div class="mock-row"><span class="nm">web-prod-01</span><span class="st">运行中</span></div>
+                  <div class="mock-row"><span class="nm">mysql-master</span><span class="st">运行中</span></div>
+                  <div class="mock-row"><span class="nm">test-redis</span><span class="st off">已停止</span></div>
+                  <div class="mock-row"><span class="nm">api-gateway</span><span class="st">运行中</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 厂商兼容 ================= -->
+<div class="vendors">
+  <div class="container vendors-inner">
+    <span class="vlabel">官方 API 直连支持</span>
+    <span class="vchip"><i style="background:var(--aliyun)"></i>阿里云 <small>ECS · 万网域名 · 云解析 DNS</small></span>
+    <span class="vchip"><i style="background:var(--tencent)"></i>腾讯云 <small>CVM · 域名 · DNSPod</small></span>
+  </div>
+</div>
+
+<!-- ================= 功能特性 ================= -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="sec-kicker">FEATURES</span>
+      <h2>多云资产,一站管理</h2>
+      <p>告别在多个云控制台之间反复切换,所有资源尽在一个清爽的界面。</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(22,119,255,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1677ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+        </div>
+        <h3>多云服务器管理</h3>
+        <p>阿里云 ECS 与腾讯云 CVM 统一列表,跨云筛选搜索,一键开机 / 关机 / 重启,状态即时更新。</p>
+        <div class="tags"><span class="tag">跨云统一视图</span><span class="tag">电源操作</span></div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(114,46,209,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#722ed1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 5.6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-5.6-4-9s1.5-6.4 4-9Z"/></svg>
+        </div>
+        <h3>域名与 DNS 解析</h3>
+        <p>跨云域名集中列表,到期自动高亮提醒;A / AAAA / CNAME / MX / TXT 等记录在线增删改查。</p>
+        <div class="tags"><span class="tag purple">到期提醒</span><span class="tag purple">7 种记录类型</span></div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(82,196,26,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#52c41a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        </div>
+        <h3>跨云资源仪表盘</h3>
+        <p>服务器与域名总量、运行状态、云厂商分布一目了然,域名到期提醒让你抢先续费不踩坑。</p>
+        <div class="tags"><span class="tag green">实时统计</span><span class="tag green">状态分布</span></div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(250,173,20,.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#faad14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+        </div>
+        <h3>密钥安全加密存储</h3>
+        <p>云厂商 AccessKey 采用 AES-GCM 加密落库,接口层绝不回传明文,只展示掩码。</p>
+        <div class="tags"><span class="tag warn">AES-GCM</span><span class="tag warn">JWT 鉴权</span></div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(22,119,255,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1677ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+        </div>
+        <h3>全平台操作审计</h3>
+        <p>谁在什么时间对哪台服务器做了什么操作,全部留痕可查,满足团队协作与合规需要。</p>
+        <div class="tags"><span class="tag">操作留痕</span><span class="tag">责任可溯</span></div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-ic" style="background:rgba(0,110,255,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#006eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/></svg>
+        </div>
+        <h3>浏览器 WebShell</h3>
+        <p>无需 SSH 客户端,点开即可通过 WebSocket 直连服务器终端,应急排障快人一步。</p>
+        <div class="tags"><span class="tag" style="background:rgba(0,110,255,.08);color:#006eff">SSH over WebSocket</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 核心优势 ================= -->
+<section class="section alt" id="highlights">
+  <div class="container split">
+    <div class="reveal">
+      <div class="sec-head" style="text-align:left;margin:0 0 8px">
+        <span class="sec-kicker">WHY CLOUDMANAGER</span>
+        <h2>轻量部署,安全可靠</h2>
+        <p>为中小企业打造:不需要 K8s 集群和一堆中间件,一个可执行文件就能跑起来。</p>
+      </div>
+      <div class="hl-item">
+        <span class="hl-ic" style="background:rgba(22,119,255,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1677ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+        </span>
+        <div><h4>单二进制,零依赖</h4><p>Go 编译的单文件程序,内置 SQLite 数据库,内嵌前端页面,解压即用,一条命令启动整个平台。</p></div>
+      </div>
+      <div class="hl-item">
+        <span class="hl-ic" style="background:rgba(82,196,26,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#52c41a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <div><h4>数据完全本地化</h4><p>资源快照与密钥全部存在你自己的服务器上,不经任何第三方中转,内网环境同样可用。</p></div>
+      </div>
+      <div class="hl-item">
+        <span class="hl-ic" style="background:rgba(114,46,209,.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#722ed1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </span>
+        <div><h4>一键全量同步</h4><p>支持多地域并发拉取全部资源,也支持开启定时自动同步,快照永远保持新鲜。</p></div>
+      </div>
+      <div class="hl-item">
+        <span class="hl-ic" style="background:rgba(250,173,20,.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#faad14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </span>
+        <div><h4>权限与安全内建</h4><p>JWT 登录鉴权、AES-GCM 密钥加密、全量操作日志,安全能力开箱自带,无需额外配置。</p></div>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span>Windows PowerShell — 部署</span></div>
+        <div class="term-body">
+          <div><span class="cm"># 下载后直接运行,无需安装任何依赖</span></div>
+          <div><span class="pr">PS&gt;</span> .\cloud-manager-windows-amd64.exe</div>
+          <div>&nbsp;</div>
+          <div><span class="ok">✓</span> HTTP 服务已启动 &nbsp;<span class="cm">→</span>&nbsp; http://0.0.0.0:8002</div>
+          <div><span class="ok">✓</span> 数据库初始化完成 &nbsp;<span class="cm">(SQLite)</span></div>
+          <div><span class="ok">✓</span> 正在后台同步已有云账号...</div>
+          <div>&nbsp;</div>
+          <div><span class="cm"># 浏览器打开,默认账号 admin / admin123</span></div>
+          <div><span class="pr">→</span> http://localhost:8002 <span class="cur"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 桌面客户端 ================= -->
+<section class="section" id="desktop">
+  <div class="container desktop-wrap">
+    <div class="desk-visual reveal">
+      <div class="desk-window">
+        <div class="desk-head">
+          <span class="dm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.8A7 7 0 1 0 4 14.9"/><path d="M12 12v7"/><path d="m9 16 3 3 3-3"/></svg>
+          </span>
+          <span><b>CloudManager 桌面版</b><small>基于 Tauri · 轻量原生窗口</small></span>
+          <span class="desk-badge">● 运行中</span>
+        </div>
+        <div class="desk-rows">
+          <div class="desk-row"><i style="background:var(--aliyun)"></i><span>阿里云 · 华东 1<br><span class="r-sub">ECS × 12 · 域名 × 5</span></span><span class="r-tag" style="background:rgba(82,196,26,.15);color:#7ee08a">已同步</span></div>
+          <div class="desk-row"><i style="background:var(--tencent)"></i><span>腾讯云 · 上海<br><span class="r-sub">CVM × 8 · DNSPod × 3</span></span><span class="r-tag" style="background:rgba(82,196,26,.15);color:#7ee08a">已同步</span></div>
+          <div class="desk-row"><i style="background:#52c41a"></i><span>web-prod-01<br><span class="r-sub">47.98.xx.xx · 2C4G</span></span><span class="r-tag" style="background:rgba(22,119,255,.15);color:#9fd0ff">Shell</span></div>
+        </div>
+        <div class="desk-dl">
+          <a class="btn btn-primary btn-sm" href="#start">下载 Windows 版</a>
+          <a class="btn btn-soft btn-sm" href="#start">查看发布包</a>
+        </div>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="sec-head" style="text-align:left;margin:0 0 18px">
+        <span class="sec-kicker">DESKTOP APP</span>
+        <h2>也有桌面客户端</h2>
+        <p>基于 Tauri 构建的 Windows 原生应用,不占内存、秒级启动,双击图标即可进入管理台,无需记住端口与地址。</p>
+      </div>
+      <div class="hl-item"><span class="hl-ic" style="background:rgba(22,119,255,.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#1677ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></span><div><h4>极致轻量</h4><p>相比 Electron 方案体积更小、内存占用更低,老电脑也能流畅运行。</p></div></div>
+      <div class="hl-item"><span class="hl-ic" style="background:rgba(114,46,209,.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#722ed1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><h4>一键连接本机服务</h4><p>客户端自动拉起并托管本地后端服务,关闭窗口即安全退出。</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 快速开始 ================= -->
+<section class="section alt" id="start">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="sec-kicker">GET STARTED</span>
+      <h2>三步开始使用</h2>
+      <p>全程不超过 5 分钟,立即拥有属于你的多云管理台。</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <h4>下载并运行</h4>
+        <p>从发布包下载对应平台的可执行文件,直接运行,浏览器访问 <b>http://localhost:8002</b>。</p>
+        <code>./cloud-manager-windows-amd64.exe</code>
+      </div>
+      <div class="step reveal">
+        <h4>录入云账号</h4>
+        <p>在「云账号」页面录入阿里云 / 腾讯云 AccessKey(自动 AES 加密存储),点击同步拉取全部资源。</p>
+        <code>云账号 → 新建账号 → 一键同步</code>
+      </div>
+      <div class="step reveal">
+        <h4>开始统一管理</h4>
+        <p>仪表盘总览资产,跨云操作服务器,管理域名与 DNS 解析,还能开 WebShell 应急登录。</p>
+        <code>admin / admin123</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta-band">
+  <div class="container reveal">
+    <h2>现在就开始,免费使用</h2>
+    <p>自部署、无订阅、无数量限制 —— 你的云资产值得一个统一的家。</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#top">免费下载</a>
+      <a class="btn btn-ghost" href="#features">查看功能清单</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 页脚 ================= -->
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="#top">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.8A7 7 0 1 0 4 14.9"/><path d="M12 12v7"/><path d="m9 16 3 3 3-3"/></svg>
+          </span>
+          <span>CloudManager<small>多云管理平台</small></span>
+        </a>
+        <p>面向中小企业的多云管理平台,集中管理阿里云 / 腾讯云服务器、域名与 DNS 解析。</p>
+      </div>
+      <div class="foot-col">
+        <b>产品</b>
+        <a href="#features">功能特性</a>
+        <a href="#highlights">核心优势</a>
+        <a href="#desktop">桌面客户端</a>
+        <a href="#start">快速开始</a>
+      </div>
+      <div class="foot-col">
+        <b>支持的云</b>
+        <a href="#top">阿里云 ECS</a>
+        <a href="#top">腾讯云 CVM</a>
+        <a href="#top">阿里云域名 / 云解析</a>
+        <a href="#top">腾讯云域名 / DNSPod</a>
+      </div>
+      <div class="foot-col">
+        <b>技术栈</b>
+        <a href="#top">Go (Gin) + SQLite</a>
+        <a href="#top">React + Ant Design 5</a>
+        <a href="#top">Tauri 桌面端</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 CloudManager · 多云管理平台</span>
+      <span>自部署 · 数据本地化 · 免费使用</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// 导航滚动状态
+const nav = document.getElementById('nav');
+const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// 移动端菜单
+const navLinks = document.getElementById('navLinks');
+document.getElementById('navToggle').addEventListener('click', () => navLinks.classList.toggle('open'));
+navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+// 进场动画
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

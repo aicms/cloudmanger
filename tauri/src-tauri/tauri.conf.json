@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.cloudmanager.desktop",
   "build": {
-    "beforeDevCommand": "",
+    "beforeDevCommand": "powershell -ExecutionPolicy Bypass -File ./dev-sidecar.ps1",
     "beforeBuildCommand": "",
     "devUrl": "http://localhost:8002",
     "frontendDist": "../dist"
