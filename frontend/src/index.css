@@ -14,7 +14,8 @@ body,
 body {
   margin: 0;
   background: #f0f2f5;
-  overflow: hidden;
+  /* 只禁横向滚动；纵向必须允许页面滚动，否则低高度屏幕下超出部分无法访问 */
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
