@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { useThemeStore } from '../stores/theme'
@@ -79,6 +79,10 @@ const darkExtras = {
 export default function ThemeProvider({ children }: { children: ReactNode }) {
   const mode = useThemeStore((s) => s.mode)
   const isDark = mode === 'dark'
+  // 供全局 CSS（如吸底翻页条的背景色）区分明暗主题
+  useEffect(() => {
+    document.documentElement.dataset.theme = mode
+  }, [mode])
   const algorithm = isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm
   const extras = isDark ? darkExtras : lightExtras
 

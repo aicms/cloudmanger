@@ -213,3 +213,19 @@ body {
     row-gap: 8px;
   }
 }
+
+/* ===== 翻页条吸附在屏幕底部：表格较长时无需先滚到页面最底部才能翻页 ===== */
+.cm-content .ant-table-wrapper .ant-pagination {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 0 !important;
+  padding: 12px 0;
+  background: #fff;
+  border-top: 1px solid rgba(5, 5, 5, 0.06);
+}
+
+:root[data-theme='dark'] .cm-content .ant-table-wrapper .ant-pagination {
+  background: #141414;
+  border-top-color: rgba(253, 253, 253, 0.12);
+}
