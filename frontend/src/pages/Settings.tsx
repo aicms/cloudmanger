@@ -28,7 +28,7 @@ export default function Settings() {
 
   const [data, setData] = useState<SettingsData | null>(null)
   const [form] = Form.useForm()
-  const [saving, setSaving] = useState<Record<string, boolean>>({})
+  const [saving, setSaving] = useState(false)
 
   // 各分区表单本地状态（受控），初始化自后端设置
   const [platformName, setPlatformName] = useState('')
@@ -50,63 +50,37 @@ export default function Settings() {
     })
   }, [])
 
-  const setSavingKey = (key: string, v: boolean) =>
-    setSaving((s) => ({ ...s, [key]: v }))
-
-  // 通用 / 外观
-  const handleSaveGeneral = async () => {
+  // 统一保存：通用 / 同步 / SSH / 会话超时 一次提交
+  const handleSaveAll = async () => {
     if (!data) return
-    setSavingKey('general', true)
+    setSaving(true)
     try {
       const name = platformName.trim() || data.platform_name
-      await settingsApi.update({ platform_name: name, theme: themeMode })
+      await settingsApi.update({
+        platform_name: name,
+        theme: themeMode,
+        sync_concurrency: syncConcurrency,
+        sync_interval: syncInterval,
+        ssh_user: sshUser,
+        ssh_port: sshPort,
+        session_timeout: sessionTimeout,
+      })
       setAppPlatformName(name)
-      message.success('通用设置已保存')
-      setData({ ...data, platform_name: name })
-    } finally {
-      setSavingKey('general', false)
-    }
-  }
-
-  // 同步设置
-  const handleSaveSync = async () => {
-    if (!data) return
-    setSavingKey('sync', true)
-    try {
-      await settingsApi.update({ sync_concurrency: syncConcurrency, sync_interval: syncInterval })
-      message.success(
-        syncInterval > 0 ? `已保存，每 ${syncInterval} 分钟自动同步一次` : '已保存，自动同步已关闭'
-      )
-      setData({ ...data, sync_concurrency: syncConcurrency, sync_interval: syncInterval })
-    } finally {
-      setSavingKey('sync', false)
-    }
-  }
-
-  // SSH 默认连接
-  const handleSaveSSH = async () => {
-    if (!data) return
-    setSavingKey('ssh', true)
-    try {
-      await settingsApi.update({ ssh_user: sshUser, ssh_port: sshPort })
       setAppSSH(sshUser, sshPort)
-      message.success('SSH 默认连接已保存')
-      setData({ ...data, ssh_user: sshUser, ssh_port: sshPort })
+      setPlatformName(name)
+      setData({
+        ...data,
+        platform_name: name,
+        theme: themeMode,
+        sync_concurrency: syncConcurrency,
+        sync_interval: syncInterval,
+        ssh_user: sshUser,
+        ssh_port: sshPort,
+        session_timeout: sessionTimeout,
+      })
+      message.success('设置已保存')
     } finally {
-      setSavingKey('ssh', false)
-    }
-  }
-
-  // 安全设置（会话超时）
-  const handleSaveSecurity = async () => {
-    if (!data) return
-    setSavingKey('security', true)
-    try {
-      await settingsApi.update({ session_timeout: sessionTimeout })
-      message.success(`会话超时已更新为 ${sessionTimeout} 小时（下次登录生效）`)
-      setData({ ...data, session_timeout: sessionTimeout })
-    } finally {
-      setSavingKey('security', false)
+      setSaving(false)
     }
   }
 
@@ -130,7 +104,7 @@ export default function Settings() {
       key: 'general',
       label: '通用 / 外观',
       children: (
-        <Card>
+        <div>
           <Alert
             type="info"
             showIcon
@@ -169,18 +143,15 @@ export default function Settings() {
                 />
               </div>
             </div>
-            <Button type="primary" loading={saving.general} onClick={handleSaveGeneral}>
-              保存
-            </Button>
           </Space>
-        </Card>
+        </div>
       ),
     },
     {
       key: 'sync',
       label: '同步设置',
       children: (
-        <Card>
+        <div>
           <Alert
             type="info"
             showIcon
@@ -215,18 +186,15 @@ export default function Settings() {
                 </Text>
               </div>
             </div>
-            <Button type="primary" loading={saving.sync} onClick={handleSaveSync}>
-              保存
-            </Button>
           </Space>
-        </Card>
+        </div>
       ),
     },
     {
       key: 'ssh',
       label: 'SSH 默认连接',
       children: (
-        <Card>
+        <div>
           <Alert
             type="info"
             showIcon
@@ -257,11 +225,8 @@ export default function Settings() {
                 />
               </div>
             </div>
-            <Button type="primary" loading={saving.ssh} onClick={handleSaveSSH}>
-              保存
-            </Button>
           </Space>
-        </Card>
+        </div>
       ),
     },
     {
@@ -286,9 +251,6 @@ export default function Settings() {
                   </Text>
                 </div>
               </div>
-              <Button type="primary" loading={saving.security} onClick={handleSaveSecurity}>
-                保存
-              </Button>
             </Space>
           </Card>
           <Card title="修改密码">
@@ -346,6 +308,14 @@ export default function Settings() {
       <Card>
         <Tabs defaultActiveKey="general" items={items} />
       </Card>
+      <div className="cm-save-bar">
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          通用、同步、SSH、会话超时的修改统一保存（修改密码需单独确认）
+        </Text>
+        <Button type="primary" loading={saving} onClick={handleSaveAll}>
+          保存
+        </Button>
+      </div>
     </div>
   )
 }

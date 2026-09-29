@@ -229,3 +229,27 @@ body {
   background: #141414;
   border-top-color: rgba(253, 253, 253, 0.12);
 }
+
+/* ===== 设置页：统一保存条吸附在屏幕底部 ===== */
+.cm-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid rgba(5, 5, 5, 0.06);
+  border-radius: 8px;
+  box-shadow: 0 -4px 14px rgba(20, 40, 80, 0.06);
+}
+
+:root[data-theme='dark'] .cm-save-bar {
+  background: #141414;
+  border-top-color: rgba(253, 253, 253, 0.12);
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.35);
+}
