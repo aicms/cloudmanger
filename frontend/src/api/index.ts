@@ -170,6 +170,9 @@ export const dnsApi = {
 export const logApi = {
   list: (params: { page?: number; page_size?: number; action?: string; keyword?: string }) =>
     client.get<unknown, PageResult<OperationLog>>('/operation-logs', { params }),
+  // 清除 N 天前的日志，返回删除条数
+  clear: (days = 7) =>
+    client.delete<unknown, { deleted: number }>('/operation-logs', { params: { days } }),
 }
 
 // ===== 设置 =====

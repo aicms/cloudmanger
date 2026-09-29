@@ -70,6 +70,7 @@ func NewRouter(svc *service.Services) *gin.Engine {
 			auth.DELETE("/dns-records/:id", h.DeleteDNSRecord)
 
 			auth.GET("/operation-logs", h.ListOperationLogs)
+			auth.DELETE("/operation-logs", h.ClearOperationLogs)
 
 			auth.GET("/settings", h.GetSettings)
 			auth.PUT("/settings", h.UpdateSettings)

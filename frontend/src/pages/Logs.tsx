@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Table, Input, Button, Tag, Card, Select, Empty } from 'antd'
+import { Table, Input, Button, Tag, Card, Select, Empty, Popconfirm, App } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { ReloadOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons'
+import { DeleteOutlined, ReloadOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons'
 import { logApi } from '../api'
 import type { OperationLog } from '../types'
 import { formatTime, ACTION_LABELS } from '../utils/format'
@@ -14,6 +14,8 @@ const ACTION_OPTIONS = Object.entries(ACTION_LABELS).map(([value, label]) => ({
 }))
 
 export default function Logs() {
+  const { message } = App.useApp()
+  const [clearing, setClearing] = useState(false)
   const [data, setData] = useState<OperationLog[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -41,6 +43,18 @@ export default function Logs() {
   useEffect(() => {
     load()
   }, [load])
+
+  const handleClear = async () => {
+    setClearing(true)
+    try {
+      const res = await logApi.clear(7)
+      message.success(`已清除 7 天前的日志，共 ${res.deleted} 条`)
+      setPage(1)
+      load()
+    } finally {
+      setClearing(false)
+    }
+  }
 
   const hasFilters = !!keyword || !!action
   const resetFilters = () => {
@@ -116,9 +130,23 @@ export default function Logs() {
             </>
           }
           right={
-            <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
-              刷新
-            </Button>
+            <>
+              <Popconfirm
+                title="清除 7 天前的日志"
+                description="将永久删除 7 天之前的所有操作日志，无法恢复。"
+                okText="清除"
+                okButtonProps={{ danger: true }}
+                cancelText="取消"
+                onConfirm={handleClear}
+              >
+                <Button danger icon={<DeleteOutlined />} loading={clearing}>
+                  清除7天前日志
+                </Button>
+              </Popconfirm>
+              <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
+                刷新
+              </Button>
+            </>
           }
         />
 

@@ -159,4 +159,5 @@ export const ACTION_LABELS: Record<string, string> = {
   'dns.create': '新增解析',
   'dns.update': '修改解析',
   'dns.delete': '删除解析',
+  'log.clear': '清除日志',
 }

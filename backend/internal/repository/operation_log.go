@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"cloudmanager/internal/model"
 
 	"gorm.io/gorm"
@@ -41,4 +43,10 @@ func (r *OperationLogRepository) ListRecent(limit int) ([]model.OperationLog, er
 	var list []model.OperationLog
 	err := r.db.Order("id DESC").Limit(limit).Find(&list).Error
 	return list, err
+}
+
+// DeleteBefore 删除创建时间早于 t 的日志，返回删除条数
+func (r *OperationLogRepository) DeleteBefore(t time.Time) (int64, error) {
+	res := r.db.Where("created_at < ?", t).Delete(&model.OperationLog{})
+	return res.RowsAffected, res.Error
 }
