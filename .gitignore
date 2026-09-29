@@ -29,6 +29,9 @@ tauri/node_modules/
 tauri/src-tauri/target/
 # 桌面端运行时数据（SQLite 等），不入库
 tauri/data/
+tauri/src-tauri/data/
+# Playwright CLI 调试产物（截图/日志）
+.playwright-cli/
 # Go 后端 sidecar 由 build-sidecar.ps1 生成，不入库
 tauri/src-tauri/binaries/
 tauri/gen-icon.js
