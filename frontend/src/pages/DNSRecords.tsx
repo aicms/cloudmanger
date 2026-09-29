@@ -175,9 +175,9 @@ export default function DNSRecords() {
     {
       title: '主机记录',
       dataIndex: 'host',
-      width: 130,
+      width: 270,
       render: (v: string, r) => (
-        <span>
+        <span style={{ whiteSpace: 'nowrap' }}>
           {v}
           <span style={{ color: '#bfbfbf' }}>.{r.domain_name}</span>
         </span>
@@ -327,7 +327,7 @@ export default function DNSRecords() {
           loading={loading}
           columns={columns}
           dataSource={data}
-          scroll={{ x: 1100 }}
+          scroll={{ x: 1150 }}
           size="middle"
           locale={{
             emptyText: !currentDomain ? (

@@ -257,12 +257,13 @@ export default function Servers() {
     {
       title: '名称 / 标签',
       dataIndex: 'name',
+      width: 220,
       render: (v: string, r) => (
         <Space direction="vertical" size={2}>
           <Space size={4}>
             <span
               className="cm-clickable"
-              style={{ fontWeight: 600, color: '#1677ff' }}
+              style={{ fontWeight: 600, color: '#1677ff', whiteSpace: 'nowrap' }}
               onClick={() => setDetail(r)}
             >
               {displayName(r)}
@@ -341,7 +342,7 @@ export default function Servers() {
     {
       title: '到期时间',
       dataIndex: 'expiry_date',
-      width: 150,
+      width: 130,
       render: (v: string) => {
         if (!v) return <span style={{ color: '#bfbfbf' }}>-</span>
         const d = daysUntil(v)
@@ -370,7 +371,7 @@ export default function Servers() {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 140,
       fixed: 'right',
       render: (_, r) => (
         <Space size={0}>
@@ -613,6 +614,7 @@ export default function Servers() {
           dataSource={data}
           rowSelection={rowSelection}
           size="middle"
+          scroll={{ x: 1130 }}
           locale={{
             emptyText: (
               <Empty description="暂无云服务器">
