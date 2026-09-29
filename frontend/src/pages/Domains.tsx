@@ -10,6 +10,9 @@ import { daysUntil, formatTime, providerName } from '../utils/format'
 import PageHeader from '../components/PageHeader'
 import Toolbar from '../components/Toolbar'
 
+// 后端存的是 'YYYY-MM-DD HH:mm:ss'，列表里只展示日期部分
+const dateOnly = (d?: string) => (d ? d.slice(0, 10) : '-')
+
 const EMPTY_FILTERS = { provider: '', keyword: '', status: '' }
 
 export default function Domains() {
@@ -54,17 +57,17 @@ export default function Domains() {
       render: (v: string) => <ProviderTag provider={v} />,
     },
     { title: '注册商', dataIndex: 'registrar', width: 110 },
-    { title: '注册日期', dataIndex: 'registration_date', width: 120 },
+    { title: '注册日期', dataIndex: 'registration_date', width: 120, render: dateOnly },
     {
       title: '到期日期',
       dataIndex: 'expiry_date',
-      width: 150,
+      width: 210,
       render: (d: string) => {
         const days = daysUntil(d)
         const color = days < 0 ? 'red' : days <= 7 ? 'red' : days <= 30 ? 'orange' : undefined
         return (
-          <span>
-            <Tag color={color}>{d}</Tag>
+          <span style={{ whiteSpace: 'nowrap' }}>
+            <Tag color={color}>{dateOnly(d)}</Tag>
             <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
               {days > 0 ? `剩 ${days} 天` : days < 0 ? `已过期 ${-days} 天` : '今日到期'}
             </span>
@@ -165,6 +168,7 @@ export default function Domains() {
           columns={columns}
           dataSource={data}
           size="middle"
+          scroll={{ x: 900 }}
           pagination={{
             current: page,
             pageSize,
@@ -195,10 +199,10 @@ export default function Domains() {
             <Descriptions.Item label="域名">{detail.domain_name}</Descriptions.Item>
             <Descriptions.Item label="云厂商">{providerName(detail.provider)}</Descriptions.Item>
             <Descriptions.Item label="注册商">{detail.registrar}</Descriptions.Item>
-            <Descriptions.Item label="注册日期">{detail.registration_date}</Descriptions.Item>
+            <Descriptions.Item label="注册日期">{dateOnly(detail.registration_date)}</Descriptions.Item>
             <Descriptions.Item label="到期日期">
               <Space>
-                <span>{detail.expiry_date}</span>
+                <span>{dateOnly(detail.expiry_date)}</span>
                 <DomainStatusTag status={detail.status} />
               </Space>
             </Descriptions.Item>
