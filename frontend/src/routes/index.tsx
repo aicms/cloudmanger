@@ -28,7 +28,7 @@ const Settings = lazy(() => import('../pages/Settings'))
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <Login />,
+    element: lazyEl(Login),
   },
   {
     path: '/',
