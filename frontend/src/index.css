@@ -145,3 +145,71 @@ body {
   color: #ad6800;
   font-size: 13px;
 }
+
+/* ===== 自适应：内容区边距、卡片内边距、浮层不超出屏幕 ===== */
+.cm-content {
+  margin: 20px;
+  min-width: 0;
+}
+
+.ant-drawer .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.ant-modal {
+  max-width: calc(100vw - 24px);
+}
+
+/* 工具栏里的输入/下拉在窄屏下不撑破容器 */
+.ant-space-item .ant-select,
+.ant-space-item .ant-input-affix-wrapper {
+  max-width: 100%;
+}
+
+@media (max-width: 991px) {
+  .cm-content {
+    margin: 12px;
+  }
+}
+
+/* 小屏下取消表格固定列，避免固定列占满可视区、其余列无法查看 */
+@media (max-width: 767px) {
+  .cm-content .ant-table-cell-fix-left,
+  .cm-content .ant-table-cell-fix-right {
+    position: static !important;
+  }
+
+  .cm-content .ant-table-ping-left:not(.ant-table-has-fix-left) .ant-table-container::before,
+  .cm-content .ant-table-ping-right:not(.ant-table-has-fix-right) .ant-table-container::after {
+    display: none;
+  }
+}
+
+@media (max-width: 575px) {
+  .cm-content {
+    margin: 8px;
+  }
+
+  .cm-content .ant-card-body {
+    padding: 12px !important;
+  }
+
+  /* 工具栏：筛选控件各占一行，按钮区靠左 */
+  .cm-content .ant-space-item > .ant-select,
+  .cm-content .ant-space-item > .ant-input-affix-wrapper {
+    width: 100% !important;
+  }
+
+  .cm-content .ant-space-wrap {
+    width: 100%;
+  }
+
+  .cm-content .ant-space-wrap > .ant-space-item {
+    max-width: 100%;
+  }
+
+  .ant-pagination {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}

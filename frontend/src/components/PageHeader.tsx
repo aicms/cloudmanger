@@ -31,7 +31,7 @@ export default function PageHeader({ title, description, extra }: PageHeaderProp
           <div style={{ fontSize: 13, color: token.colorTextSecondary, marginTop: 2 }}>{description}</div>
         )}
       </div>
-      {extra && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{extra}</div>}
+      {extra && <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>{extra}</div>}
     </div>
   )
 }

@@ -54,7 +54,7 @@ export default function Login() {
       }}
     >
       <Card
-        style={{ width: 400, boxShadow: '0 20px 48px rgba(0,32,84,0.35)', border: 'none' }}
+        style={{ width: '100%', maxWidth: 400, boxShadow: '0 20px 48px rgba(0,32,84,0.35)', border: 'none' }}
         styles={{ body: { padding: 36 } }}
       >
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
