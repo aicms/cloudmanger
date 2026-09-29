@@ -46,7 +46,7 @@ func (r *ServerRepository) Paginate(q model.ServerQuery) (*model.PageResult, err
 	if err := tx.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	if err := tx.Order("id DESC").Offset(q.Offset()).Limit(q.PageSize).Find(&list).Error; err != nil {
+	if err := tx.Order("(expiry_date IS NULL OR expiry_date = '') ASC, expiry_date ASC, id DESC").Offset(q.Offset()).Limit(q.PageSize).Find(&list).Error; err != nil {
 		return nil, err
 	}
 	return &model.PageResult{List: list, Total: total, Page: q.Page, PageSize: q.PageSize}, nil
