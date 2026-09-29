@@ -53,8 +53,23 @@ export default function Settings() {
   // 统一保存：通用 / 同步 / SSH / 会话超时 一次提交
   const handleSaveAll = async () => {
     if (!data) return
+    // 安全设置里填写了新密码时，一并修改密码（校验不通过则中止，不保存其它设置）
+    const wantChangePwd = !!form.getFieldValue('new_password')
+    if (wantChangePwd) {
+      try {
+        await form.validateFields()
+      } catch {
+        message.error('请检查修改密码表单：原密码、新密码（至少 6 位）、确认密码')
+        return
+      }
+    }
     setSaving(true)
     try {
+      if (wantChangePwd) {
+        const values = form.getFieldsValue()
+        await authApi.changePassword(values.old_password, values.new_password)
+        form.resetFields()
+      }
       const name = platformName.trim() || data.platform_name
       await settingsApi.update({
         platform_name: name,
@@ -78,17 +93,10 @@ export default function Settings() {
         ssh_port: sshPort,
         session_timeout: sessionTimeout,
       })
-      message.success('设置已保存')
+      message.success(wantChangePwd ? '设置已保存，密码已修改' : '设置已保存')
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleChangePassword = async () => {
-    const values = await form.validateFields()
-    await authApi.changePassword(values.old_password, values.new_password)
-    message.success('密码修改成功')
-    form.resetFields()
   }
 
   if (!data) {
@@ -253,14 +261,14 @@ export default function Settings() {
               </div>
             </Space>
           </Card>
-          <Card title="修改密码">
+          <Card title="修改密码" extra={<Text type="secondary" style={{ fontSize: 13 }}>不修改密码请留空</Text>}>
             <Form form={form} layout="vertical">
               <Form.Item
                 label="原密码"
                 name="old_password"
                 rules={[{ required: true, message: '请输入原密码' }]}
               >
-                <Input.Password placeholder="请输入原密码" />
+                <Input.Password placeholder="请输入原密码" autoComplete="new-password" />
               </Form.Item>
               <Form.Item
                 label="新密码"
@@ -270,7 +278,7 @@ export default function Settings() {
                   { min: 6, message: '密码至少 6 位' },
                 ]}
               >
-                <Input.Password placeholder="至少 6 位" />
+                <Input.Password placeholder="至少 6 位" autoComplete="new-password" />
               </Form.Item>
               <Form.Item
                 label="确认新密码"
@@ -288,12 +296,7 @@ export default function Settings() {
                   }),
                 ]}
               >
-                <Input.Password placeholder="再次输入新密码" />
-              </Form.Item>
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Button type="primary" onClick={handleChangePassword}>
-                  确认修改
-                </Button>
+                <Input.Password placeholder="再次输入新密码" autoComplete="new-password" />
               </Form.Item>
             </Form>
           </Card>
@@ -310,7 +313,7 @@ export default function Settings() {
       </Card>
       <div className="cm-save-bar">
         <Text type="secondary" style={{ fontSize: 13 }}>
-          通用、同步、SSH、会话超时的修改统一保存（修改密码需单独确认）
+          设置修改统一保存；若填写了新密码，会一并修改密码
         </Text>
         <Button type="primary" loading={saving} onClick={handleSaveAll}>
           保存
