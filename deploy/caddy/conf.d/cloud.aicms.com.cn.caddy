@@ -1,0 +1,16 @@
+# 站点：cloud.aicms.com.cn — CloudManager 多云管理平台在线 Demo
+# 反向代理到本机 systemd 服务 cloudmanager（127.0.0.1:8002，单二进制内嵌前端）。
+# 腾讯云 DNSPod DNS-01 自动签发（tencentcloud 插件已编译进 /usr/bin/caddy）
+cloud.aicms.com.cn {
+	tls {
+		dns tencentcloud {
+			secret_id {env.TENCENTCLOUD_SECRET_ID}
+			secret_key {env.TENCENTCLOUD_SECRET_KEY}
+		}
+	}
+	reverse_proxy 127.0.0.1:8002 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+	import site_log cloud.aicms.com.cn
+}
