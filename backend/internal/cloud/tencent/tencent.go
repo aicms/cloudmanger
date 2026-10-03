@@ -171,6 +171,11 @@ func toServer(ins *cvm.Instance, region string) cloud.Server {
 	if ins.InstanceId != nil {
 		instanceID = *ins.InstanceId
 	}
+	// 公网出带宽上限（Mbps）；未分配公网带宽时为 0
+	bandwidth := int64(0)
+	if ins.InternetAccessible != nil && ins.InternetAccessible.InternetMaxBandwidthOut != nil {
+		bandwidth = *ins.InternetAccessible.InternetMaxBandwidthOut
+	}
 	return cloud.Server{
 		InstanceID:   instanceID,
 		Name:         name,
@@ -183,6 +188,7 @@ func toServer(ins *cvm.Instance, region string) cloud.Server {
 		InstanceType: instanceType,
 		PublicIP:     publicIP,
 		InnerIP:      innerIP,
+		Bandwidth:    int(bandwidth),
 		ExpiryDate:   cloud.NormalizeExpiryDate(toString(ins.ExpiredTime)),
 	}
 }
@@ -288,6 +294,11 @@ func toLighthouseServer(ins *lighthouse.Instance, region string) cloud.Server {
 	if ins.Platform != nil {
 		osName = *ins.Platform
 	}
+	// 实例带宽（Mbps），取自套餐的公网出带宽上限
+	bandwidth := int64(0)
+	if ins.InternetAccessible != nil && ins.InternetAccessible.InternetMaxBandwidthOut != nil {
+		bandwidth = *ins.InternetAccessible.InternetMaxBandwidthOut
+	}
 	return cloud.Server{
 		InstanceID: instanceID,
 		Name:       name,
@@ -300,6 +311,7 @@ func toLighthouseServer(ins *lighthouse.Instance, region string) cloud.Server {
 		Category:   "lighthouse",
 		PublicIP:   publicIP,
 		InnerIP:    innerIP,
+		Bandwidth:  int(bandwidth),
 		ExpiryDate: cloud.NormalizeExpiryDate(toString(ins.ExpiredTime)),
 	}
 }

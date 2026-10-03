@@ -259,7 +259,8 @@ func toServer(ins ecs.Instance) cloud.Server {
 		InstanceType: ins.InstanceType,
 		PublicIP:     publicIP,
 		InnerIP:      innerIP,
-		Bandwidth:    0,
+		// 公网带宽上限（Mbps）；按量付费/VPC 实例可能为 0（EIP 带宽不计入此字段）
+		Bandwidth:    ins.InternetMaxBandwidthOut,
 		Tags:         strings.Join(tags, ","),
 		Category:     "ecs",
 		ExpiryDate:   cloud.NormalizeExpiryDate(ins.ExpiredTime),

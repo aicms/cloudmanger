@@ -335,7 +335,9 @@ export default function Servers() {
           <span>
             {r.cpu} 核 {formatMemory(r.memory)}
           </span>
-          <span style={{ fontSize: 12, color: '#8c8c8c' }}>带宽 {r.bandwidth} Mbps</span>
+          <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+            {r.bandwidth > 0 ? `带宽 ${r.bandwidth} Mbps` : '带宽 -'}
+          </span>
         </Space>
       ),
     },
@@ -688,7 +690,7 @@ export default function Servers() {
               )}
             </Descriptions.Item>
             <Descriptions.Item label="内网 IP">{detail.inner_ip || '-'}</Descriptions.Item>
-            <Descriptions.Item label="带宽">{detail.bandwidth} Mbps</Descriptions.Item>
+            <Descriptions.Item label="带宽">{detail.bandwidth > 0 ? `${detail.bandwidth} Mbps` : '-'}</Descriptions.Item>
             <Descriptions.Item label="标签">
               {parseTags(detail.tags).length > 0 ? (
                 <Space size={4} wrap>
