@@ -99,6 +99,14 @@ type CloudProvider interface {
 	DeleteDNSRecord(ctx context.Context, acct Account, domainName string, recordID string) error
 }
 
+// DNSRecordStatusUpdater 可选能力：只切换解析记录的启用/暂停状态，不重发记录内容。
+// 阿里云 UpdateDomainRecord 会按 (RR,Type,Value,Line) 判重，把原值重发回去会直接报
+// DomainRecordDuplicate，所以纯状态切换必须走它自己的 SetDomainRecordStatus。
+// 未实现该接口的厂商，业务层退回到 UpdateDNSRecord。
+type DNSRecordStatusUpdater interface {
+	UpdateDNSRecordStatus(ctx context.Context, acct Account, domainName string, r DNSRecord) error
+}
+
 // ProviderRegistry 按云厂商获取 Provider 实现
 var registry = map[string]func() CloudProvider{}
 

@@ -416,6 +416,18 @@ func normalizeRecordStatus(s string) string {
 	}
 }
 
+// aliyunStatus 把本地的 enable/disable 映射为 API 需要的 ENABLE/DISABLE。
+// 无法识别时返回空串，表示不改动记录状态。
+func aliyunStatus(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "disable", "disabled", "暂停", "0":
+		return "DISABLE"
+	case "enable", "enabled", "启用", "1":
+		return "ENABLE"
+	}
+	return ""
+}
+
 func (p *Provider) CreateDNSRecord(ctx context.Context, acct cloud.Account, domainName string, r cloud.DNSRecord) (cloud.DNSRecord, error) {
 	_, ac := dnsClient(acct)
 	req := alidns.CreateAddDomainRecordRequest()
@@ -458,7 +470,33 @@ func (p *Provider) UpdateDNSRecord(ctx context.Context, acct cloud.Account, doma
 	if _, err := ac.UpdateDomainRecord(req); err != nil {
 		return r, fmt.Errorf("修改解析失败: %w", err)
 	}
+	// UpdateDomainRecord 不带状态字段，启用/暂停必须走 SetDomainRecordStatus
+	if err := setRecordStatus(acct, r); err != nil {
+		return r, err
+	}
 	return r, nil
+}
+
+// UpdateDNSRecordStatus 实现 cloud.DNSRecordStatusUpdater：
+// 只改启用/暂停，不重发记录内容。
+func (p *Provider) UpdateDNSRecordStatus(ctx context.Context, acct cloud.Account, domainName string, r cloud.DNSRecord) error {
+	return setRecordStatus(acct, r)
+}
+
+func setRecordStatus(acct cloud.Account, r cloud.DNSRecord) error {
+	st := aliyunStatus(r.Status)
+	if st == "" {
+		return nil
+	}
+	_, ac := dnsClient(acct)
+	req := alidns.CreateSetDomainRecordStatusRequest()
+	req.Scheme = "https"
+	req.RecordId = r.RecordID
+	req.Status = st
+	if _, err := ac.SetDomainRecordStatus(req); err != nil {
+		return fmt.Errorf("修改解析状态失败: %w", err)
+	}
+	return nil
 }
 
 func (p *Provider) DeleteDNSRecord(ctx context.Context, acct cloud.Account, domainName string, recordID string) error {

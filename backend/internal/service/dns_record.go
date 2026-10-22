@@ -124,7 +124,19 @@ func (s *DNSRecordService) Update(id uint, req model.UpdateDNSRecordRequest) (*m
 		// 用它兜底会让"只改记录值"的操作意外启用/暂停解析。
 		Status: req.Status,
 	}
-	if _, err := provider.UpdateDNSRecord(nil, account, rec.DomainName, input); err != nil {
+	if onlyStatusChange(req) {
+		// 纯状态切换时不重发记录内容：阿里云 UpdateDomainRecord 会按 (RR,Type,Value,Line)
+		// 判重，原值重发直接报 DomainRecordDuplicate。
+		if su, ok := provider.(cloud.DNSRecordStatusUpdater); ok {
+			if err := su.UpdateDNSRecordStatus(nil, account, rec.DomainName, cloud.DNSRecord{
+				RecordID: rec.RecordID, Status: req.Status,
+			}); err != nil {
+				return nil, err
+			}
+		} else if _, err := provider.UpdateDNSRecord(nil, account, rec.DomainName, input); err != nil {
+			return nil, err
+		}
+	} else if _, err := provider.UpdateDNSRecord(nil, account, rec.DomainName, input); err != nil {
 		return nil, err
 	}
 	// 同步更新本地
@@ -187,6 +199,12 @@ func recordAlreadyGone(err error) bool {
 		}
 	}
 	return false
+}
+
+// onlyStatusChange 判断这次请求是否只切换启用/暂停状态，不涉及记录内容。
+func onlyStatusChange(req model.UpdateDNSRecordRequest) bool {
+	return req.Status != "" && req.Type == "" && req.Host == "" &&
+		req.Value == "" && req.TTL == 0 && req.Priority == 0
 }
 
 // strOr 取非空字符串，否则取 fallback
