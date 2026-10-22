@@ -118,7 +118,9 @@ func (s *DNSRecordService) Update(id uint, req model.UpdateDNSRecordRequest) (*m
 		Value:    strOr(req.Value, rec.Value),
 		TTL:      intOr(req.TTL, rec.TTL),
 		Priority: intOr(req.Priority, rec.Priority),
-		Status:   strOr(req.Status, rec.Status),
+		// 状态只在调用方显式要求时下发：本地 rec.Status 可能因旧的错误同步而不实，
+		// 用它兜底会让"只改记录值"的操作意外启用/暂停解析。
+		Status: req.Status,
 	}
 	if _, err := provider.UpdateDNSRecord(nil, account, rec.DomainName, input); err != nil {
 		return nil, err
