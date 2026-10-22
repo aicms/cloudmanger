@@ -1,0 +1,5 @@
+# 站点：caddy.dtcms.com.cn — EasyCaddy 面板（本机 106.54.197.57）
+# 反向代理到本机 2015；域名靠 *.dtcms.com.cn 泛解析指向本机，证书走 HTTP-01
+caddy.dtcms.com.cn {
+	reverse_proxy 127.0.0.1:2015
+}
