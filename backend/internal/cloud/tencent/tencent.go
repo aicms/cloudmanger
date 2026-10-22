@@ -514,6 +514,8 @@ func (p *Provider) CreateDNSRecord(ctx context.Context, acct cloud.Account, doma
 	}
 	req := dnspod.NewCreateRecordRequest()
 	req.Domain = common.StringPtr(domainName)
+	// CreateRecord 与 ModifyRecord 一样把 RecordLine 列为必传；界面没有选线路的入口，按 DNSPod 控制台默认行为用“默认”线路
+	req.RecordLine = common.StringPtr("默认")
 	req.SubDomain = common.StringPtr(r.Host)
 	req.RecordType = common.StringPtr(r.Type)
 	req.Value = common.StringPtr(r.Value)
@@ -522,6 +524,9 @@ func (p *Provider) CreateDNSRecord(ctx context.Context, acct cloud.Account, doma
 	}
 	if r.Priority > 0 {
 		req.MX = common.Uint64Ptr(uint64(r.Priority))
+	}
+	if st := dnspodStatus(r.Status); st != "" {
+		req.Status = common.StringPtr(st)
 	}
 	resp, err := client.CreateRecordWithContext(bg(ctx), req)
 	if err != nil {
