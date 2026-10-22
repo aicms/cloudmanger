@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 
 	"cloudmanager/internal/cloud"
@@ -487,15 +488,23 @@ func (p *Provider) ListDNSRecords(ctx context.Context, acct cloud.Account, domai
 }
 
 func normalizeDnspodStatus(s string) string {
-	// DNSPod 记录状态可能为 "启用"/"暂停" 或 1/0
-	switch s {
-	case "启用", "1", "enable", "Enabled":
-		return "enable"
-	case "暂停", "0", "disable", "Disabled":
+	// DNSPod 返回大写 ENABLE/DISABLE，历史数据还可能是中文或 1/0
+	if dnspodStatus(s) == "DISABLE" {
 		return "disable"
-	default:
-		return "enable"
 	}
+	return "enable"
+}
+
+// dnspodStatus 归一化为 DNSPod API 使用的大写状态。
+// 无法识别时返回空串，表示不改动记录状态。
+func dnspodStatus(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "disable", "disabled", "暂停", "0":
+		return "DISABLE"
+	case "enable", "enabled", "启用", "1":
+		return "ENABLE"
+	}
+	return ""
 }
 
 func (p *Provider) CreateDNSRecord(ctx context.Context, acct cloud.Account, domainName string, r cloud.DNSRecord) (cloud.DNSRecord, error) {
@@ -525,15 +534,58 @@ func (p *Provider) CreateDNSRecord(ctx context.Context, acct cloud.Account, doma
 	return r, nil
 }
 
+// dnspodRecordLine 回读记录当前所在线路。
+// DNSPod 的 ModifyRecord 把 RecordLine 列为必传，且会按传入值覆盖记录线路：
+// 若一律填“默认”，电信/境外等非默认线路的记录会被静默挪到默认线路，改变解析结果。
+func (p *Provider) dnspodRecordLine(ctx context.Context, client *dnspod.Client, domainName string, recordID uint64) (string, string, error) {
+	const pageSize = uint64(3000) // DescribeRecordList 单页上限
+	for offset := uint64(0); ; offset += pageSize {
+		req := dnspod.NewDescribeRecordListRequest()
+		req.Domain = common.StringPtr(domainName)
+		req.Offset = common.Uint64Ptr(offset)
+		req.Limit = common.Uint64Ptr(pageSize)
+		req.ErrorOnEmpty = common.StringPtr("no")
+		resp, err := client.DescribeRecordListWithContext(ctx, req)
+		if err != nil {
+			return "", "", fmt.Errorf("查询解析记录线路失败: %w", err)
+		}
+		if resp.Response == nil {
+			return "", "", fmt.Errorf("查询解析记录线路失败: 响应为空")
+		}
+		for _, item := range resp.Response.RecordList {
+			if ptrUint(item.RecordId) == recordID {
+				return toString(item.Line), toString(item.LineId), nil
+			}
+		}
+		if uint64(len(resp.Response.RecordList)) < pageSize {
+			return "", "", fmt.Errorf("解析记录不存在或已被删除，请先同步域名 %s", domainName)
+		}
+	}
+}
+
 func (p *Provider) UpdateDNSRecord(ctx context.Context, acct cloud.Account, domainName string, r cloud.DNSRecord) (cloud.DNSRecord, error) {
 	client, err := dnspodClient(acct)
 	if err != nil {
 		return r, err
 	}
 	rid := parseRecordID(r.RecordID)
+	if rid == 0 {
+		return r, fmt.Errorf("解析记录 ID 无效(%q)，请重新同步该域名", r.RecordID)
+	}
+	line, lineID, err := p.dnspodRecordLine(bg(ctx), client, domainName, rid)
+	if err != nil {
+		return r, err
+	}
+	if line == "" {
+		line = "默认"
+	}
 	req := dnspod.NewModifyRecordRequest()
 	req.Domain = common.StringPtr(domainName)
 	req.RecordId = common.Uint64Ptr(rid)
+	req.RecordLine = common.StringPtr(line)
+	if lineID != "" {
+		req.RecordLineId = common.StringPtr(lineID)
+	}
 	req.SubDomain = common.StringPtr(r.Host)
 	req.RecordType = common.StringPtr(r.Type)
 	req.Value = common.StringPtr(r.Value)
@@ -542,6 +594,9 @@ func (p *Provider) UpdateDNSRecord(ctx context.Context, acct cloud.Account, doma
 	}
 	if r.Priority > 0 {
 		req.MX = common.Uint64Ptr(uint64(r.Priority))
+	}
+	if st := dnspodStatus(r.Status); st != "" {
+		req.Status = common.StringPtr(st)
 	}
 	if _, err := client.ModifyRecordWithContext(bg(ctx), req); err != nil {
 		return r, fmt.Errorf("修改解析失败: %w", err)

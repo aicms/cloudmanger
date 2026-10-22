@@ -4,6 +4,20 @@
 > 技术栈：Go (Gin) + SQLite + React + Ant Design 5，全栈。
 > 通过录入云厂商 AccessKey，调用**真实云 API** 拉取并集中管理阿里云 / 腾讯云资源（无内置模拟数据模式）。
 
+## 界面预览
+
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="CloudManager 产品演示：仪表盘、云服务器、域名、DNS 解析与云账号管理" width="900">
+</p>
+
+> 动图与截图为**界面演示**，其中的服务器、域名、IP 等均为虚构示例数据。
+
+| 云服务器 | 域名与 DNS 解析 |
+|:---:|:---:|
+| ![云服务器](docs/screenshots/servers.png) | ![域名解析](docs/screenshots/dns.png) |
+| **云账号管理** | **操作日志** |
+| ![云账号管理](docs/screenshots/accounts.png) | ![操作日志](docs/screenshots/logs.png) |
+
 ## 功能模块
 
 | 模块 | 说明 |
