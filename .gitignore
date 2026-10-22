@@ -1,5 +1,7 @@
 # ===== Go =====
 backend/bin/
+# 根目录 bin/ 也是交叉编译产物（单个二进制 60MB+，历史上差点被提进仓库）
+/bin/
 backend/data/
 backend/logs/
 backend/server.log
@@ -40,6 +42,7 @@ tauri/gen-icon.js
 # ===== IDE / OS =====
 .vscode/
 .idea/
+.qoder/
 .DS_Store
 Thumbs.db
 *.log
