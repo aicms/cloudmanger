@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"cloudmanager/internal/auth"
@@ -160,10 +162,31 @@ func (s *DNSRecordService) Delete(id uint) error {
 	account, _, err := s.resolveProvider(rec.DomainID)
 	if err == nil {
 		if provider := cloud.Get(account.Provider); provider != nil {
-			_ = provider.DeleteDNSRecord(nil, account, rec.DomainName, rec.RecordID)
+			if e := provider.DeleteDNSRecord(nil, account, rec.DomainName, rec.RecordID); e != nil && !recordAlreadyGone(e) {
+				return fmt.Errorf("云上解析没删掉，本地记录已保留: %w", e)
+			}
 		}
 	}
 	return recRepo.Delete(id)
+}
+
+// recordAlreadyGone 判断云厂商错误是否表示该记录在云上本就不存在。
+// 只有这种情况可以直接清掉本地缓存；其余失败必须回给用户，否则本地记录消失了、
+// 云上解析还在，界面却显示删除成功。
+func recordAlreadyGone(err error) bool {
+	msg := strings.ToLower(err.Error())
+	for _, k := range []string{
+		"recordidinvalid", // DNSPod：记录编号错误
+		"recordnotexist",  // 阿里云：记录不存在
+		"invalidrecordid",
+		"记录编号错误",
+		"不存在",
+	} {
+		if strings.Contains(msg, k) {
+			return true
+		}
+	}
+	return false
 }
 
 // strOr 取非空字符串，否则取 fallback

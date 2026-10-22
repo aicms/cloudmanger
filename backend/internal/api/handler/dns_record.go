@@ -50,6 +50,7 @@ func (h *H) UpdateDNSRecord(c *gin.Context) {
 	}
 	rec, err := h.Svc.DNSRecord.Update(uint(id), req)
 	if err != nil {
+		h.recordOp(c, "dns.update", c.Param("id"), err.Error(), "failed")
 		FailMsg(c, err.Error())
 		return
 	}
@@ -61,6 +62,7 @@ func (h *H) UpdateDNSRecord(c *gin.Context) {
 func (h *H) DeleteDNSRecord(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err := h.Svc.DNSRecord.Delete(uint(id)); err != nil {
+		h.recordOp(c, "dns.delete", c.Param("id"), err.Error(), "failed")
 		FailMsg(c, err.Error())
 		return
 	}
